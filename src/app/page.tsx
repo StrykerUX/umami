@@ -10,14 +10,16 @@ export default function RootPage() {
 
   useEffect(() => {
     const lastTeam = getItem(LAST_TEAM_CONFIG);
+    // AURORA: land on the Aurora overview (core landing page in cloud mode).
+    const AURORA_HOME = process.env.cloudMode ? 'websites' : 'aurora/overview';
 
     // Without a token we already know the user is logged out; skip the /websites.
     if (!process.env.cloudMode && !getClientAuthToken()) {
       router.replace('/login');
     } else if (lastTeam) {
-      router.replace(`/teams/${lastTeam}/websites`);
+      router.replace(`/teams/${lastTeam}/${AURORA_HOME}`);
     } else {
-      router.replace(`/websites`);
+      router.replace(`/${AURORA_HOME}`); // AURORA: App moves this into the organization
     }
   }, [router]);
 

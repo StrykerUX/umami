@@ -1,0 +1,16 @@
+{
+  "$schema": "https://unpkg.com/wrangler/config-schema.json",
+  // Aurora uptime checker + report scheduler.
+  // Deploy: npx wrangler deploy -c workers/aurora-uptime/wrangler.jsonc
+  // Secret: npx wrangler secret put AURORA_CRON_SECRET -c workers/aurora-uptime/wrangler.jsonc
+  "name": "aurora-uptime",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  "workers_dev": false,
+  "triggers": { "crons": ["* * * * *"] },
+  "vars": {
+    "AURORA_URL": "https://analytics.aurora33.dev",
+    "REGION": "cf"
+  },
+  "observability": { "enabled": true, "head_sampling_rate": 1 }
+}

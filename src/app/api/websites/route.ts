@@ -1,3 +1,4 @@
+import { resolveCreateTeamId } from '@/aurora/lib/org-default'; // AURORA
 import { ENTITY_TYPE } from '@/lib/constants';
 import { uuid } from '@/lib/crypto';
 import { isEntityIdInUse } from '@/lib/entity';
@@ -35,7 +36,8 @@ export async function POST(request: Request) {
     return error();
   }
 
-  const { id, name, domain, shareId, teamId } = body;
+  const { id, name, domain, shareId } = body;
+  const teamId = await resolveCreateTeamId(body.teamId); // AURORA: default to the org
 
   if (process.env.CLOUD_MODE) {
     const account = teamId ? await fetchTeam(teamId) : await fetchAccount(auth.user.id);

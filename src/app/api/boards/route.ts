@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { resolveCreateTeamId } from '@/aurora/lib/org-default'; // AURORA
 import { BOARD_TYPES, normalizeBoardType } from '@/lib/boards';
 import { uuid } from '@/lib/crypto';
 import { getQueryFilters, parseRequest } from '@/lib/request';
@@ -57,7 +58,7 @@ export async function POST(request: Request) {
     return error();
   }
 
-  const { teamId } = body;
+  const teamId = await resolveCreateTeamId(body.teamId); // AURORA: default to the org
 
   const canCreate = teamId
     ? await canCreateTeamWebsite(auth, teamId)
@@ -83,6 +84,7 @@ export async function POST(request: Request) {
     // which the request schema allows — reaches Prisma as undefined and throws.
     description: body.description ?? '',
     parameters: body.parameters ?? {},
+    teamId, // AURORA
     userId: !teamId ? auth.user.id : undefined,
   };
 

@@ -4,13 +4,13 @@ import {
   Column,
   Icon,
   Row,
-  Text,
   Tooltip,
   TooltipTrigger,
 } from '@umami/react-zen';
 import { AdminNav } from '@/app/(main)/admin/AdminNav';
 import { SettingsNav } from '@/app/(main)/settings/SettingsNav';
 import { WebsiteNav } from '@/app/(main)/websites/[websiteId]/WebsiteNav';
+import { AuroraBrand, useAuroraNavLinks } from '@/aurora/components/nav'; // AURORA
 import { IconLabel } from '@/components/common/IconLabel';
 import Link from '@/components/common/Link';
 import { OverlayScrollArea } from '@/components/common/OverlayScrollArea';
@@ -25,7 +25,6 @@ import {
   PanelsLeftBottom,
 } from '@/components/icons';
 import { UserButton } from '@/components/input/UserButton';
-import { Logo } from '@/components/svg';
 
 export function SideNav(props: any) {
   const { t, labels } = useMessages();
@@ -69,6 +68,8 @@ export function SideNav(props: any) {
     },
   ];
 
+  const navLinks = useAuroraNavLinks(links); // AURORA
+
   return (
     <Column
       {...props}
@@ -97,11 +98,7 @@ export function SideNav(props: any) {
           justifyContent={isCollapsed ? 'center' : 'space-between'}
           flexGrow="1"
         >
-          {!isCollapsed && (
-            <IconLabel icon={<Logo />}>
-              <Text weight="bold">umami</Text>
-            </IconLabel>
-          )}
+          {!isCollapsed && <AuroraBrand /* AURORA */ />}
           <PanelButton />
         </Row>
       </Row>
@@ -118,7 +115,7 @@ export function SideNav(props: any) {
           <AdminNav />
         ) : (
           <Column gap="2">
-            {links.map(({ id, path, label, icon }) => {
+            {navLinks.map(({ id, path, label, icon }) => {
               const isSelected = pathname.startsWith(renderUrl(path, false));
               const content = (
                 <Row

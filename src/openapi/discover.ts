@@ -21,6 +21,11 @@ async function walk(directory: string, predicate: (name: string) => boolean): Pr
       const entryPath = path.join(directory, entry.name);
 
       if (entry.isDirectory()) {
+        // AURORA: the Aurora API is private and stays out of the public OpenAPI/api-client.
+        if (entry.name === 'aurora' && path.basename(directory) === 'api') {
+          return [];
+        }
+
         return walk(entryPath, predicate);
       }
 

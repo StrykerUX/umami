@@ -1,11 +1,11 @@
 'use client';
 import { Icon, Row } from '@umami/react-zen';
+import { AuroraOrgBadge } from '@/aurora/components/nav'; // AURORA
 import { useNavigation } from '@/components/hooks';
 import { Minus } from '@/components/icons';
 import { BoardSelect } from '@/components/input/BoardSelect';
 import { LinkSelect } from '@/components/input/LinkSelect';
 import { PixelSelect } from '@/components/input/PixelSelect';
-import { TeamsButton } from '@/components/input/TeamsButton';
 import { WebsiteSelect } from '@/components/input/WebsiteSelect';
 
 export function TopNav() {
@@ -49,7 +49,7 @@ export function TopNav() {
       backgroundColor="surface-raised"
     >
       <Row alignItems="center">
-        <TeamsButton />
+        <AuroraOrgBadge /* AURORA: replaces TeamsButton (single org) */ />
         {(websiteId || linkId || pixelId || boardId) && (
           <>
             <Icon size="sm" color="muted" rotate={90} style={{ opacity: 0.7, margin: '0 6px' }}>

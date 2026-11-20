@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { resolveCreateTeamId } from '@/aurora/lib/org-default'; // AURORA
 import { uuid } from '@/lib/crypto';
 import { isEntityIdInUse } from '@/lib/entity';
 import { getQueryFilters, parseRequest } from '@/lib/request';
@@ -41,7 +42,8 @@ export async function POST(request: Request) {
     return error();
   }
 
-  const { id, name, slug, teamId } = body;
+  const { id, name, slug } = body;
+  const teamId = await resolveCreateTeamId(body.teamId); // AURORA: default to the org
 
   const canCreate = teamId
     ? await canCreateTeamWebsite(auth, teamId)

@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { MobileNav } from '@/app/(main)/MobileNav';
 import { SideNav } from '@/app/(main)/SideNav';
 import { TopNav } from '@/app/(main)/TopNav';
+import { useAuroraOrgRedirect } from '@/aurora/components/nav'; // AURORA
 import {
   useConfig,
   useLoginQuery,
@@ -33,6 +34,7 @@ export function App({ children }) {
   const needsTwoFactorSetup = !!(twoFactorStatus?.isRequired && !twoFactorStatus?.isEnabled);
   const passwordChangeRequired = !!user?.passwordChangeRequired && !config.cloudMode;
   const accessBlocked = needsTwoFactorSetup || passwordChangeRequired;
+  const auroraRedirecting = useAuroraOrgRedirect(!!user); // AURORA: single organization
 
   useEffect(() => {
     if (teamId) {
@@ -55,7 +57,12 @@ export function App({ children }) {
     }
   }, [isBillingPastDue, isOwner, teamId]);
 
-  if (isLoading || (config.cloudMode && isSubscriptionLoading) || (teamId && isTeamLoading)) {
+  if (
+    isLoading ||
+    auroraRedirecting || // AURORA
+    (config.cloudMode && isSubscriptionLoading) ||
+    (teamId && isTeamLoading)
+  ) {
     return <Loading placement="absolute" />;
   }
 

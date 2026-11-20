@@ -4,14 +4,12 @@ import {
   FormButtons,
   FormField,
   FormSubmitButton,
-  Heading,
-  Icon,
   PasswordField,
   TextField,
 } from '@umami/react-zen';
 import { useRouter } from 'next/navigation';
+import { AuroraBrandLarge } from '@/aurora/components/AuroraLogo'; // AURORA
 import { useMessages, useUpdateQuery } from '@/components/hooks';
-import { Logo } from '@/components/svg';
 import { setClientAuthToken } from '@/lib/client';
 import { consumeReturnUrl } from '@/lib/return-url';
 import { setUser } from '@/store/app';
@@ -38,10 +36,7 @@ export function LoginForm() {
 
   return (
     <Column justifyContent="center" alignItems="center" gap="6">
-      <Icon size="lg">
-        <Logo />
-      </Icon>
-      <Heading>umami</Heading>
+      <AuroraBrandLarge /* AURORA */ />
       <Form
         onSubmit={handleSubmit}
         error={getErrorMessage(error)}
@@ -76,6 +71,9 @@ export function LoginForm() {
           </FormSubmitButton>
         </FormButtons>
       </Form>
+      <a href="/forgot" data-test="forgot-link">
+        ¿Olvidaste tu contraseña?
+      </a>
     </Column>
   );
 }

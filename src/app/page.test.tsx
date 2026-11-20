@@ -18,12 +18,13 @@ test('sends visitors without a token straight to login', () => {
   expect(getTestRouter().replace).toHaveBeenCalledWith('/login');
 });
 
-test('sends logged-in users to their websites', () => {
+// AURORA: self-hosted lands on the Aurora overview.
+test('sends logged-in users to the Aurora overview', () => {
   localStorage.setItem('umami.auth', JSON.stringify('token'));
 
   render(<RootPage />);
 
-  expect(getTestRouter().replace).toHaveBeenCalledWith('/websites');
+  expect(getTestRouter().replace).toHaveBeenCalledWith('/aurora/overview');
 });
 
 test('sends logged-in users back to their last team', () => {
@@ -32,7 +33,7 @@ test('sends logged-in users back to their last team', () => {
 
   render(<RootPage />);
 
-  expect(getTestRouter().replace).toHaveBeenCalledWith('/teams/team-1/websites');
+  expect(getTestRouter().replace).toHaveBeenCalledWith('/teams/team-1/aurora/overview'); // AURORA
 });
 
 // Cloud auth doesn't use the local token, so a missing token must not force /login.

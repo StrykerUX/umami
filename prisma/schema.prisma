@@ -582,3 +582,206 @@ model ErrorRateLimit {
 
   @@map("error_rate_limit")
 }
+
+// =====================================================================
+// === AURORA ===========================================================
+// Custom Aurora models. Keep everything below this marker so upstream
+// merges only ever append above it. No relations to core models: link by
+// id columns only, so core models stay untouched.
+// =====================================================================
+
+model AuroraUserProfile {
+  userId    String   @id @map("user_id") @db.Uuid
+  email     String   @unique @db.VarChar(320)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("aurora_user_profile")
+}
+
+model AuroraInvite {
+  id         String    @id @map("invite_id") @db.Uuid
+  kind       String    @db.VarChar(10)
+  email      String?   @db.VarChar(320)
+  role       String    @db.VarChar(20)
+  tokenHash  String    @unique @map("token_hash") @db.VarChar(64)
+  maxUses    Int       @default(1) @map("max_uses")
+  uses       Int       @default(0)
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(6)
+  invitedBy  String?   @map("invited_by") @db.Uuid
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz(6)
+  lastSentAt DateTime? @map("last_sent_at") @db.Timestamptz(6)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([email])
+  @@map("aurora_invite")
+}
+
+model AuroraPasswordReset {
+  id        String    @id @map("reset_id") @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash") @db.VarChar(64)
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([userId])
+  @@map("aurora_password_reset")
+}
+
+model AuroraWorkspace {
+  id        String   @id @map("workspace_id") @db.Uuid
+  name      String   @db.VarChar(100)
+  slug      String   @unique @db.VarChar(100)
+  kind      String   @db.VarChar(20)
+  color     String?  @db.VarChar(20)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  clients AuroraClient[]
+
+  @@map("aurora_workspace")
+}
+
+model AuroraClientType {
+  id        String   @id @map("client_type_id") @db.Uuid
+  name      String   @unique @db.VarChar(100)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  clients AuroraClient[]
+
+  @@map("aurora_client_type")
+}
+
+model AuroraClient {
+  id            String   @id @map("client_id") @db.Uuid
+  workspaceId   String?  @map("workspace_id") @db.Uuid
+  clientTypeId  String?  @map("client_type_id") @db.Uuid
+  name          String   @db.VarChar(150)
+  contactEmails String[] @default([]) @map("contact_emails")
+  notes         String?  @db.VarChar(2000)
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace  AuroraWorkspace?  @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  clientType AuroraClientType? @relation(fields: [clientTypeId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId])
+  @@index([clientTypeId])
+  @@map("aurora_client")
+}
+
+model AuroraWebsiteMeta {
+  websiteId   String   @id @map("website_id") @db.Uuid
+  workspaceId String?  @map("workspace_id") @db.Uuid
+  clientId    String?  @map("client_id") @db.Uuid
+  tags        String[] @default([])
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([workspaceId])
+  @@index([clientId])
+  @@map("aurora_website_meta")
+}
+
+model AuroraReportSchedule {
+  id                    String    @id @map("schedule_id") @db.Uuid
+  name                  String    @db.VarChar(150)
+  scope                 String    @db.VarChar(20)
+  scopeId               String?   @map("scope_id") @db.Uuid
+  frequency             String    @db.VarChar(20)
+  sections              Json
+  recipients            String[]  @default([])
+  includeClientContacts Boolean   @default(true) @map("include_client_contacts")
+  timezone              String    @default("America/Mexico_City") @db.VarChar(64)
+  active                Boolean   @default(true)
+  nextRunAt             DateTime  @map("next_run_at") @db.Timestamptz(6)
+  lastRunAt             DateTime? @map("last_run_at") @db.Timestamptz(6)
+  createdBy             String?   @map("created_by") @db.Uuid
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  runs AuroraReportRun[]
+
+  @@index([active, nextRunAt])
+  @@map("aurora_report_schedule")
+}
+
+model AuroraReportRun {
+  id          String    @id @map("run_id") @db.Uuid
+  scheduleId  String    @map("schedule_id") @db.Uuid
+  periodStart DateTime  @map("period_start") @db.Timestamptz(6)
+  periodEnd   DateTime  @map("period_end") @db.Timestamptz(6)
+  prevStart   DateTime  @map("prev_start") @db.Timestamptz(6)
+  prevEnd     DateTime  @map("prev_end") @db.Timestamptz(6)
+  snapshot    Json
+  status      String    @db.VarChar(20)
+  error       String?   @db.VarChar(2000)
+  sentTo      String[]  @default([]) @map("sent_to")
+  sentAt      DateTime? @map("sent_at") @db.Timestamptz(6)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  schedule AuroraReportSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  @@index([scheduleId, createdAt])
+  @@map("aurora_report_run")
+}
+
+model AuroraMonitor {
+  websiteId           String    @id @map("website_id") @db.Uuid
+  url                 String    @db.VarChar(2000)
+  enabled             Boolean   @default(true)
+  timeoutMs           Int       @default(10000) @map("timeout_ms")
+  keyword             String?   @db.VarChar(200)
+  alertEmails         String[]  @default([]) @map("alert_emails")
+  status              String    @default("unknown") @db.VarChar(20)
+  consecutiveFailures Int       @default(0) @map("consecutive_failures")
+  lastCheckedAt       DateTime? @map("last_checked_at") @db.Timestamptz(6)
+  lastChangeAt        DateTime? @map("last_change_at") @db.Timestamptz(6)
+  lastLatencyMs       Int?      @map("last_latency_ms")
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("aurora_monitor")
+}
+
+model AuroraUptimeCheck {
+  id         BigInt   @id @default(autoincrement()) @map("check_id")
+  websiteId  String   @map("website_id") @db.Uuid
+  checkedAt  DateTime @map("checked_at") @db.Timestamptz(6)
+  ok         Boolean
+  statusCode Int?     @map("status_code")
+  latencyMs  Int?     @map("latency_ms")
+  error      String?  @db.VarChar(500)
+  region     String?  @db.VarChar(20)
+
+  @@index([websiteId, checkedAt])
+  @@map("aurora_uptime_check")
+}
+
+model AuroraIncident {
+  id           String    @id @map("incident_id") @db.Uuid
+  websiteId    String    @map("website_id") @db.Uuid
+  startedAt    DateTime  @map("started_at") @db.Timestamptz(6)
+  resolvedAt   DateTime? @map("resolved_at") @db.Timestamptz(6)
+  cause        String?   @db.VarChar(500)
+  annotationId String?   @map("annotation_id") @db.Uuid
+
+  @@index([websiteId, startedAt])
+  @@map("aurora_incident")
+}
+
+model AuroraEmailLog {
+  id         String   @id @map("email_id") @db.Uuid
+  kind       String   @db.VarChar(30)
+  to         String[]
+  subject    String   @db.VarChar(300)
+  status     String   @db.VarChar(20)
+  providerId String?  @map("provider_id") @db.VarChar(100)
+  error      String?  @db.VarChar(1000)
+  html       String?
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([kind, createdAt])
+  @@map("aurora_email_log")
+}
