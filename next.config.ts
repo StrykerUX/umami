@@ -94,10 +94,27 @@ const headers = [
     source: '/:path*',
     headers: defaultHeaders,
   },
-  // AURORA: Aurora Status requires no-store on the health check (overrides the /api no-cache).
+  // AURORA: no-store (overrides the /api no-cache) for the Aurora Status health check and for
+  // OAuth responses carrying tokens (RFC 6749 §5.1).
   {
     source: '/api/aurora/health/:path*',
     headers: [{ key: 'Cache-Control', value: 'no-store' }],
+  },
+  {
+    source: '/api/aurora/oauth/:path*',
+    headers: [{ key: 'Cache-Control', value: 'no-store' }],
+  },
+  // AURORA: the OAuth consent page must never be framed (clickjacking), even with ALLOWED_FRAME_URLS.
+  {
+    source: '/oauth/:path*',
+    headers: [
+      {
+        key: 'Content-Security-Policy',
+        value: getContentSecurityPolicy().replace(/frame-ancestors [^;]*/, "frame-ancestors 'none'"),
+      },
+      { key: 'X-Frame-Options', value: 'DENY' },
+      { key: 'Referrer-Policy', value: 'no-referrer' },
+    ],
   },
 ];
 

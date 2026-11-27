@@ -1,4 +1,5 @@
 const buckets = new Map<string, number[]>();
+const MAX_KEYS = 10000;
 
 /** Small in-process sliding-window limiter for public, unauthenticated endpoints. */
 export function rateLimit(key: string, limit: number, windowMs: number, now = Date.now()) {
@@ -10,12 +11,15 @@ export function rateLimit(key: string, limit: number, windowMs: number, now = Da
   }
 
   hits.push(now);
+  // Re-insert so Map order tracks recency, then evict the least recently used keys. O(1) per call,
+  // bounded memory even if callers rotate spoofed IPs.
+  buckets.delete(key);
   buckets.set(key, hits);
 
-  if (buckets.size > 10000) {
-    for (const [k, v] of buckets) {
-      if (!v.some(t => now - t < windowMs)) buckets.delete(k);
-    }
+  while (buckets.size > MAX_KEYS) {
+    const oldest = buckets.keys().next().value;
+    if (oldest === undefined) break;
+    buckets.delete(oldest);
   }
 
   return true;

@@ -3,9 +3,13 @@ import type { CreateUmamiMcpHttpHandlerOptions, McpLogger } from '@umami/mcp';
 import { createUmamiMcpHttpHandler } from '@umami/mcp';
 import debug from 'debug';
 import { getMcpTools } from '@/aurora/mcp'; // AURORA
+import {
+  auroraMcpUnauthorized,
+  authenticateAuroraMcp,
+  withoutCredentialEcho,
+} from '@/aurora/oauth/mcp-auth'; // AURORA
 import { uuid } from '@/lib/crypto';
 import { getBaseUrl } from '@/lib/get-base-url';
-import { authenticateMcpRequest, mcpAuthErrorResponse } from '@/lib/mcp/auth';
 import { createInProcessFetch } from '@/lib/mcp/dispatch';
 
 export const dynamic = 'force-dynamic';
@@ -37,7 +41,7 @@ const handler = createUmamiMcpHttpHandler({
     return new UmamiClient({
       baseUrl: `${baseUrl}${basePath}/api`,
       token: authInfo.token,
-      fetch: createInProcessFetch(),
+      fetch: withoutCredentialEcho(createInProcessFetch()), // AURORA: strip tokens from /api/me
     }) as unknown as Awaited<ReturnType<CreateUmamiMcpHttpHandlerOptions['createClient']>>;
   },
 });
@@ -47,10 +51,11 @@ async function handle(request: Request) {
     return new Response(null, { status: 404 });
   }
 
-  const auth = await authenticateMcpRequest(request);
+  // AURORA: OAuth access tokens (claude.ai) or API keys; 401 advertises resource metadata.
+  const auth = await authenticateAuroraMcp(request);
 
   if (!auth.ok) {
-    return mcpAuthErrorResponse(auth);
+    return auroraMcpUnauthorized(auth);
   }
 
   const requestId = uuid();

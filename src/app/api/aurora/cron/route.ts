@@ -3,6 +3,7 @@ import { json } from '@/aurora/lib/api';
 import { recordCronRun } from '@/aurora/lib/health';
 import { runDueSchedules } from '@/aurora/lib/report';
 import { pruneUptimeChecks } from '@/aurora/lib/uptime';
+import { pruneOAuth } from '@/aurora/oauth/service';
 import { unauthorized } from '@/lib/response';
 
 export const dynamic = 'force-dynamic';
@@ -15,8 +16,9 @@ export async function POST(request: Request) {
 
   const reports = await runDueSchedules(new Date());
   const pruned = await pruneUptimeChecks();
+  const oauth = await pruneOAuth();
 
   await recordCronRun();
 
-  return json({ reports, pruned });
+  return json({ reports, pruned, oauth });
 }

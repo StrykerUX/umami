@@ -47,13 +47,37 @@ Formato: https://status.aurora33.org/healthcheck
 
 ## MCP
 
-Endpoint: `https://analytics.aurora33.dev/mcp` (requiere `MCP_ENABLED=1`). Autenticación con
-**API key de Umami** (Configuración → API keys); cada key ve lo que permite el rol de su usuario.
+Endpoint: `https://analytics.aurora33.dev/mcp` (requiere `MCP_ENABLED=1`). Dos formas de entrar;
+en ambas el acceso es el del usuario y su rol:
+
+- **OAuth (claude.ai)** — Configuración → Conectores → Agregar conector personalizado → URL del
+  endpoint. Claude registra su cliente, te manda a `/oauth/authorize` (pantalla de consentimiento
+  de Aurora) y obtiene tokens. Cada usuario ve y revoca sus apps en **Conexiones**; los admins
+  ven todas.
+- **API key** (Claude Code / Desktop):
 
 ```bash
 claude mcp add --transport http aurora https://analytics.aurora33.dev/mcp \
   --header "Authorization: Bearer <API_KEY>"
 ```
+
+OAuth (`src/aurora/oauth/`): OAuth 2.1 con PKCE S256 obligatorio, registro dinámico de clientes
+públicos (RFC 7591), metadata RFC 8414 / RFC 9728, revocación RFC 7009.
+- Emisor fijo desde `APP_URL` (nunca de headers). Redirects solo a las URLs exactas de callback
+  de Claude (`https://claude.ai/api/mcp/auth_callback`, `https://claude.com/...`) o loopback;
+  configurable con `AURORA_OAUTH_REDIRECT_URIS` (lista exacta, sin comodines).
+- Tokens opacos guardados como hash: acceso 1 h, refresh 30 días con rotación; cada conexión dura
+  como máximo 90 días. Reutilizar un código o un refresh viejo revoca toda la conexión (un reintento
+  dentro de 60 s solo falla). Cambiar la contraseña, borrar el usuario o exigirle 2FA sin
+  configurarla corta el acceso.
+- Cada conexión nueva manda un correo al usuario ("Aplicación conectada") con link a Conexiones.
+- La pantalla de consentimiento no se puede embeber (`frame-ancestors 'none'`, `X-Frame-Options`)
+  y muestra el host de destino y la antigüedad del registro del cliente.
+- El consentimiento exige sesión interactiva (no API key) y que la cuenta no tenga la contraseña
+  por defecto.
+- Los tokens solo sirven en `/mcp`; las herramientas llegan a la API únicamente por las listas
+  permitidas de `src/lib/mcp/dispatch.ts` y `src/aurora/mcp/dispatch.ts`.
+- Kill switch: `AURORA_OAUTH_DISABLED=1`.
 
 - Herramientas de Umami (stats, métricas, sesiones, eventos, funnels, retención, etc.).
 - Lectura Aurora: `aurora_list_workspaces`, `aurora_list_client_types`, `aurora_list_clients`,
@@ -75,6 +99,8 @@ claude mcp add --transport http aurora https://analytics.aurora33.dev/mcp \
 | `AURORA_CRON_SECRET` | aleatorio ≥ 32 chars, **igual** al secreto del Worker |
 | `AURORA_HEALTH_TOKEN` | aleatorio ≥ 32 chars; se registra en Aurora Status |
 | `MCP_ENABLED` | `1` |
+| `AURORA_OAUTH_DISABLED` | `1` apaga OAuth (las API keys siguen funcionando) |
+| `AURORA_OAUTH_REDIRECT_URIS` | URLs https exactas permitidas como redirect OAuth (default: callbacks de claude.ai / claude.com) |
 | `AURORA_MCP_WRITE` | `1` para exponer herramientas MCP de escritura (opcional) |
 | `AURORA_ORG_NAME` | `Aurora` (opcional) |
 

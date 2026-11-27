@@ -64,3 +64,24 @@ ${input.error ? `<p><b>Detalle:</b> ${escapeHtml(input.error)}</p>` : ''}`,
 
   return { subject, html, text: `${subject} — ${input.url}` };
 }
+
+export function oauthGrantEmail(input: {
+  clientName: string;
+  redirectHost: string;
+  manageUrl: string;
+}) {
+  const subject = 'Nueva aplicación conectada a tu cuenta de Aurora';
+  const html = layout(
+    subject,
+    `<h1 style="font-size:20px;margin:0 0 12px">Aplicación conectada</h1>
+<p><b>${escapeHtml(input.clientName)}</b> (${escapeHtml(input.redirectHost)}) ahora puede consultar Aurora Analytics con tu cuenta y tus permisos.</p>
+<p>Si no fuiste tú, revoca el acceso de inmediato y cambia tu contraseña:</p>
+<p style="margin:24px 0">${button(input.manageUrl, 'Revisar conexiones')}</p>`,
+  );
+
+  return {
+    subject,
+    html,
+    text: `${input.clientName} (${input.redirectHost}) se conectó a tu cuenta de Aurora. Si no fuiste tú, revócalo: ${input.manageUrl}`,
+  };
+}

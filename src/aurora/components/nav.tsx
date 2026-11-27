@@ -12,6 +12,7 @@ import {
   LayoutGrid,
   LinkIcon,
   Mail,
+  Plug,
   Tags,
   Users,
 } from '@/components/icons';
@@ -49,6 +50,7 @@ export function useAuroraNavLinks(coreLinks: NavLink[]): NavLink[] {
     core('boards', { id: 'boards', label: 'Boards', path: '/boards', icon: <LayoutDashboard /> }),
     core('links', { id: 'links', label: 'Links', path: '/links', icon: <LinkIcon /> }),
     core('pixels', { id: 'pixels', label: 'Pixels', path: '/pixels', icon: <Grid2x2 /> }),
+    { id: 'aurora-connections', label: 'Conexiones', path: '/aurora/connections', icon: <Plug /> },
     ...(me?.role === 'admin'
       ? [
           { id: 'aurora-members', label: 'Miembros', path: '/aurora/members', icon: <Users /> },
