@@ -45,6 +45,24 @@ Formato: https://status.aurora33.org/healthcheck
 - Admins: página **Health** (`/aurora/health`) vía `/api/aurora/health/details`.
 - El healthcheck de Railway sigue en `/api/heartbeat` (trivial; no reinicia por fallas de la base).
 
+## MCP
+
+Endpoint: `https://analytics.aurora33.dev/mcp` (requiere `MCP_ENABLED=1`). Autenticación con
+**API key de Umami** (Configuración → API keys); cada key ve lo que permite el rol de su usuario.
+
+```bash
+claude mcp add --transport http aurora https://analytics.aurora33.dev/mcp \
+  --header "Authorization: Bearer <API_KEY>"
+```
+
+- Herramientas de Umami (stats, métricas, sesiones, eventos, funnels, retención, etc.).
+- Lectura Aurora: `aurora_list_workspaces`, `aurora_list_client_types`, `aurora_list_clients`,
+  `aurora_list_sites`, `aurora_overview`, `aurora_client_summary`, `aurora_list_reports`,
+  `aurora_get_report_run`, `aurora_uptime_status`, `aurora_list_incidents`, `aurora_health` (admin).
+- Escritura (solo con `AURORA_MCP_WRITE=1`, rol Editor+): `aurora_run_report` (por defecto
+  vista previa, sin enviar), `aurora_classify_website`, `aurora_upsert_client`.
+- Las herramientas llaman a `/api/aurora/*` en proceso con la misma API key (`src/aurora/mcp/`).
+
 ## Variables de entorno (Railway)
 
 | Variable | Valor |
@@ -57,6 +75,7 @@ Formato: https://status.aurora33.org/healthcheck
 | `AURORA_CRON_SECRET` | aleatorio ≥ 32 chars, **igual** al secreto del Worker |
 | `AURORA_HEALTH_TOKEN` | aleatorio ≥ 32 chars; se registra en Aurora Status |
 | `MCP_ENABLED` | `1` |
+| `AURORA_MCP_WRITE` | `1` para exponer herramientas MCP de escritura (opcional) |
 | `AURORA_ORG_NAME` | `Aurora` (opcional) |
 
 Worker: `AURORA_CRON_SECRET` (secret) y `AURORA_URL` (var en `wrangler.jsonc`).

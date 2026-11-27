@@ -94,6 +94,11 @@ const headers = [
     source: '/:path*',
     headers: defaultHeaders,
   },
+  // AURORA: Aurora Status requires no-store on the health check (overrides the /api no-cache).
+  {
+    source: '/api/aurora/health/:path*',
+    headers: [{ key: 'Cache-Control', value: 'no-store' }],
+  },
 ];
 
 if (isProd) {

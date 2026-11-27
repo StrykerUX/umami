@@ -9,6 +9,8 @@ Aurora lives in its own folders so upstream Umami merges stay easy:
 | Aurora API | `src/app/api/aurora/` |
 | Database | `// === AURORA ===` block at the **end** of `prisma/schema.prisma` + `prisma/migrations/aurora_*` |
 | Uptime / scheduler worker | `workers/aurora-uptime/` (Cloudflare) |
+| MCP tools | `src/aurora/mcp/` |
+| Upstream sync | `.github/workflows/aurora-upstream-sync.yml` |
 | Tests | `src/aurora/__tests__/` (unit), `tests/aurora/` + `scripts/aurora-e2e.ts` (end-to-end) |
 
 Aurora tables never declare Prisma relations to core models, so no core model is edited.
@@ -29,6 +31,8 @@ If an upstream merge conflicts, it will be in one of these. Re-apply the marked 
 | `src/app/login/LoginForm.tsx` | Aurora brand + "¿Olvidaste tu contraseña?" link |
 | `src/app/page.tsx` (+ `page.test.tsx`) | landing page → `/aurora/overview` (core behaviour kept in cloud mode) |
 | `src/app/layout.tsx`, `src/app/(main)/layout.tsx` | title template "Aurora Analytics" |
+| `next.config.ts` | `Cache-Control: no-store` for `/api/aurora/health` (Aurora Status requirement) |
+| `src/app/mcp/route.ts` | `tools: getMcpTools()` → Umami's MCP tools + `aurora_*` tools |
 | `src/openapi/discover.ts` | skips `src/app/api/aurora` so the private API is not published in `openapi.json` / `@umami/api-client` |
 | `package.json` | scripts `test:aurora`, `test:aurora:e2e` |
 
