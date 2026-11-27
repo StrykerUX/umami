@@ -101,5 +101,13 @@ export default function middleware(req: NextRequest) {
   // ALLOWED_FRAME_URLS is resolved from the runtime environment.
   res.headers.set('Content-Security-Policy', contentSecurityPolicy);
 
+  // AURORA: the OAuth consent page must never be framed, even with ALLOWED_FRAME_URLS.
+  if (/\/oauth\//.test(req.nextUrl.pathname)) {
+    res.headers.set(
+      'Content-Security-Policy',
+      contentSecurityPolicy.replace(/frame-ancestors [^;]*/, "frame-ancestors 'none'"),
+    );
+  }
+
   return res;
 }

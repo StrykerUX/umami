@@ -33,6 +33,7 @@ If an upstream merge conflicts, it will be in one of these. Re-apply the marked 
 | `src/app/page.tsx` (+ `page.test.tsx`) | landing page → `/aurora/overview` (core behaviour kept in cloud mode) |
 | `src/app/layout.tsx`, `src/app/(main)/layout.tsx` | title template "Aurora Analytics" |
 | `next.config.ts` | `Cache-Control: no-store` for `/api/aurora/health` (Aurora Status) and `/api/aurora/oauth` (RFC 6749 §5.1); `frame-ancestors 'none'` + `X-Frame-Options: DENY` + `no-referrer` on `/oauth/*` (consent page) |
+| `docker/proxy.ts` | `frame-ancestors 'none'` on `/oauth/*` (the Docker image sets CSP per request, overriding next.config) |
 | `src/app/mcp/route.ts` | `tools: getMcpTools()` → Umami's MCP tools + `aurora_*` tools; `authenticateAuroraMcp()` accepts Aurora OAuth tokens or API keys and its 401 advertises `resource_metadata`; `withoutCredentialEcho()` strips tokens from `/api/me` responses inside MCP |
 | `src/openapi/discover.ts` | skips `src/app/api/aurora` so the private API is not published in `openapi.json` / `@umami/api-client` |
 | `package.json` | scripts `test:aurora`, `test:aurora:e2e` |
