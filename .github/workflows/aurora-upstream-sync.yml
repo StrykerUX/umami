@@ -1,0 +1,129 @@
+# AURORA: weekly sync with upstream Umami.
+# - Fast-forwards `master` to upstream/master (master is a pure mirror).
+# - Merges upstream into a branch off aurora/foundation, runs typecheck + unit tests,
+#   and opens a PR. Conflicts open an issue instead. Nothing is merged automatically.
+name: Aurora upstream sync
+
+on:
+  schedule:
+    - cron: '0 15 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: aurora-upstream-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.repository == 'StrykerUX/umami'
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: umami
+          POSTGRES_PASSWORD: umami
+          POSTGRES_DB: umami
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U umami" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://umami:umami@localhost:5432/umami
+      APP_SECRET: ci-only-secret
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: aurora/foundation
+          fetch-depth: 0
+
+      - name: Fetch upstream
+        id: upstream
+        run: |
+          git config user.name "aurora-sync[bot]"
+          git config user.email "aurora-sync@users.noreply.github.com"
+          git remote add upstream https://github.com/umami-software/umami.git
+          git fetch upstream master
+          git fetch origin master
+          echo "behind=$(git rev-list --count HEAD..upstream/master)" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse --short upstream/master)" >> "$GITHUB_OUTPUT"
+
+      - name: Fast-forward master mirror
+        if: steps.upstream.outputs.behind != '0'
+        run: |
+          if git merge-base --is-ancestor origin/master upstream/master; then
+            git push origin upstream/master:refs/heads/master
+          else
+            echo "::warning::master has commits that are not upstream; not touching it."
+          fi
+
+      - name: Merge upstream into a sync branch
+        id: merge
+        if: steps.upstream.outputs.behind != '0'
+        run: |
+          BRANCH="aurora/upstream-sync-${{ steps.upstream.outputs.sha }}"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git checkout -b "$BRANCH"
+          if git merge upstream/master --no-edit; then
+            echo "conflict=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "conflict=true" >> "$GITHUB_OUTPUT"
+            git diff --name-only --diff-filter=U > conflicts.txt
+            git merge --abort
+          fi
+
+      - name: Report conflicts
+        if: steps.merge.outputs.conflict == 'true'
+        run: |
+          {
+            echo "Upstream \`${{ steps.upstream.outputs.sha }}\` conflicts with aurora/foundation."
+            echo
+            echo "Conflicting files:"
+            sed 's/^/- `/; s/$/`/' conflicts.txt
+            echo
+            echo "Resolve locally (see AURORA_PATCHES.md), then run tests and test:aurora:e2e."
+          } > body.md
+          gh issue create --title "Upstream sync conflict (${{ steps.upstream.outputs.sha }})" --body-file body.md
+
+      - uses: actions/setup-node@v5
+        if: steps.merge.outputs.conflict == 'false'
+        with:
+          node-version: 22
+
+      - name: Install, migrate, typecheck, unit tests
+        id: tests
+        if: steps.merge.outputs.conflict == 'false'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          npx -y pnpm@12.3.4 install --frozen-lockfile
+          npx prisma migrate deploy
+          npx tsc --noEmit -p . 2>&1 | tee tsc.log
+          npx vitest run 2>&1 | tail -15 | tee vitest.log
+
+      - name: Push branch and open PR
+        if: steps.merge.outputs.conflict == 'false'
+        run: |
+          git push origin "${{ steps.merge.outputs.branch }}"
+          {
+            echo "Merges upstream Umami \`${{ steps.upstream.outputs.sha }}\` (${{ steps.upstream.outputs.behind }} commits) into aurora/foundation."
+            echo
+            echo "**Typecheck + unit tests:** ${{ steps.tests.outcome }}"
+            echo
+            echo '```'
+            tail -15 vitest.log 2>/dev/null || true
+            echo '```'
+            echo
+            echo "Before merging: review files listed in AURORA_PATCHES.md and run \`pnpm test:aurora:e2e\` locally."
+          } > body.md
+          gh pr create --base aurora/foundation --head "${{ steps.merge.outputs.branch }}" \
+            --title "Sync upstream Umami ${{ steps.upstream.outputs.sha }}" --body-file body.md

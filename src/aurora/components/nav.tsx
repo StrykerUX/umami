@@ -7,6 +7,7 @@ import {
   Briefcase,
   Globe,
   Grid2x2,
+  HeartPulse,
   LayoutDashboard,
   LayoutGrid,
   LinkIcon,
@@ -49,7 +50,10 @@ export function useAuroraNavLinks(coreLinks: NavLink[]): NavLink[] {
     core('links', { id: 'links', label: 'Links', path: '/links', icon: <LinkIcon /> }),
     core('pixels', { id: 'pixels', label: 'Pixels', path: '/pixels', icon: <Grid2x2 /> }),
     ...(me?.role === 'admin'
-      ? [{ id: 'aurora-members', label: 'Miembros', path: '/aurora/members', icon: <Users /> }]
+      ? [
+          { id: 'aurora-members', label: 'Miembros', path: '/aurora/members', icon: <Users /> },
+          { id: 'aurora-health', label: 'Health', path: '/aurora/health', icon: <HeartPulse /> },
+        ]
       : []),
   ];
 }

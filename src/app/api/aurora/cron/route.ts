@@ -1,5 +1,6 @@
 import { checkServiceSecret } from '@/aurora/lib/access';
 import { json } from '@/aurora/lib/api';
+import { recordCronRun } from '@/aurora/lib/health';
 import { runDueSchedules } from '@/aurora/lib/report';
 import { pruneUptimeChecks } from '@/aurora/lib/uptime';
 import { unauthorized } from '@/lib/response';
@@ -14,6 +15,8 @@ export async function POST(request: Request) {
 
   const reports = await runDueSchedules(new Date());
   const pruned = await pruneUptimeChecks();
+
+  await recordCronRun();
 
   return json({ reports, pruned });
 }

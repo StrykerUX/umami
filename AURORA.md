@@ -31,6 +31,20 @@ reciben los reportes en los emails de contacto del cliente y un link web firmado
 - Cada caída abre un incidente, crea una anotación en la gráfica del sitio y manda email a las alertas.
 - Retención de checks: 90 días.
 
+## Health (Aurora Status)
+
+Formato: https://status.aurora33.org/healthcheck
+
+- `GET /api/aurora/health` — sin token: `{ "status": "ok" | "degraded" | "down" }`. Con
+  `Authorization: Bearer <AURORA_HEALTH_TOKEN>`: además `checks` y `version`. Token ausente o
+  incorrecto ⇒ misma respuesta que sin token (nunca 401). `down` ⇒ 503, resto 200.
+  `Cache-Control: no-store`, sin sesión, sin escrituras, cada revisión con límite de 1.5 s.
+- Revisiones (`key` estables): `db` (puede dar `down`), `migrations`, `cron` (30 min degradado,
+  2 h caído), `uptime_worker` (5 min), `email`, `reports` (atraso > 1 h), `monitors` (informativa).
+- El cron guarda su latido en `app_setting` (`aurora.cron.lastRunAt`).
+- Admins: página **Health** (`/aurora/health`) vía `/api/aurora/health/details`.
+- El healthcheck de Railway sigue en `/api/heartbeat` (trivial; no reinicia por fallas de la base).
+
 ## Variables de entorno (Railway)
 
 | Variable | Valor |
@@ -41,6 +55,7 @@ reciben los reportes en los emails de contacto del cliente y un link web firmado
 | `RESEND_API_KEY` | API key de Resend (sin ella los emails solo se guardan en `aurora_email_log`) |
 | `MAIL_FROM` | `Aurora Analytics <analytics@aurora33.org>` |
 | `AURORA_CRON_SECRET` | aleatorio ≥ 32 chars, **igual** al secreto del Worker |
+| `AURORA_HEALTH_TOKEN` | aleatorio ≥ 32 chars; se registra en Aurora Status |
 | `MCP_ENABLED` | `1` |
 | `AURORA_ORG_NAME` | `Aurora` (opcional) |
 
@@ -56,3 +71,10 @@ npx -y pnpm@12.3.4 test:aurora:e2e   # end-to-end (servidor + Postgres reales)
 ```
 
 Ver `AURORA_PATCHES.md` para cómo convivir con upstream.
+
+## Sincronizar con Umami
+
+`master` es espejo exacto de upstream; Railway despliega `aurora/foundation`.
+La Action `.github/workflows/aurora-upstream-sync.yml` corre cada lunes (o a mano): adelanta
+`master`, mezcla upstream en una rama `aurora/upstream-sync-<sha>`, corre typecheck + unit tests
+y abre un PR. Si hay conflictos abre un issue. Antes de mergear: `pnpm test:aurora:e2e`.

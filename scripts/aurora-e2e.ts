@@ -18,6 +18,7 @@ const env = {
   APP_URL: url,
   AURORA_CRON_SECRET: cronSecret,
   AURORA_MAIL_DRIVER: 'outbox',
+  AURORA_HEALTH_TOKEN: process.env.AURORA_HEALTH_TOKEN || 'e2e-health-token-0123456789',
   AURORA_E2E_URL: url,
   CI: '1',
   NEXT_TELEMETRY_DISABLED: '1',
