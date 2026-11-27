@@ -2,6 +2,7 @@ import { UmamiClient } from '@umami/api-client';
 import type { CreateUmamiMcpHttpHandlerOptions, McpLogger } from '@umami/mcp';
 import { createUmamiMcpHttpHandler } from '@umami/mcp';
 import debug from 'debug';
+import { getMcpTools } from '@/aurora/mcp'; // AURORA
 import { uuid } from '@/lib/crypto';
 import { getBaseUrl } from '@/lib/get-base-url';
 import { authenticateMcpRequest, mcpAuthErrorResponse } from '@/lib/mcp/auth';
@@ -24,6 +25,7 @@ const logger: McpLogger = {
  */
 const handler = createUmamiMcpHttpHandler({
   logger,
+  tools: getMcpTools(), // AURORA: Umami tools + Aurora tools
   onerror: error => log('handler error: %s', error?.message),
   createClient: (authInfo, ctx) => {
     const baseUrl = getBaseUrl(ctx.requestInfo?.headers).toString().replace(/\/+$/, '');

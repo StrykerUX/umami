@@ -19,6 +19,8 @@ const env = {
   AURORA_CRON_SECRET: cronSecret,
   AURORA_MAIL_DRIVER: 'outbox',
   AURORA_E2E_URL: url,
+  MCP_ENABLED: '1',
+  AURORA_MCP_WRITE: process.env.AURORA_MCP_WRITE ?? '1',
   CI: '1',
   NEXT_TELEMETRY_DISABLED: '1',
 };
